@@ -1,0 +1,19 @@
+# https://hub.docker.com/repository/docker/yunkehe/node16-chromium120
+# yunkehe/node16-chromium120:nest 当前镜像包含内容内容
+# 1. node
+# 2. Chromium 120.0.6099.109-r0
+# 3. ttf-freefont
+# 4. tini 使用tini启动避免僵尸进程
+
+FROM node:20.10.0-alpine
+
+# Chromium 120.0.6099.109-r0 的apk镜像源地址
+RUN echo 'https://mirrors.ustc.edu.cn/alpine/edge/main' > /etc/apk/repositories \
+    && echo 'https://mirrors.ustc.edu.cn/alpine/edge/community' >> /etc/apk/repositories
+
+# 安装组件
+RUN apk add --upgrade chromium ttf-freefont  --allow-untrusted
+RUN apk add --no-cache tini
+
+# 安装 pnpm
+RUN npm install -g pnpm --registry https://registry.npmmirror.com

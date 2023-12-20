@@ -10,6 +10,6 @@ export class PdfController {
   async print(@Query('url') url: string) {
     console.warn('[----> print-url: ', url)
 
-    return this.pdfService.printPdf(url)
+    return this.pdfService.execute({ type: 'pdf', url })
   }
 }

@@ -6,6 +6,10 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
     "module": "commonjs",
+    "typeRoots": [
+      "node_modules/@types/",
+      "types"
+    ],
     "strictBindCallApply": false,
     "strictNullChecks": false,
     "noFallthroughCasesInSwitch": false,

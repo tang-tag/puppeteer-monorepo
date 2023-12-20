@@ -10,7 +10,8 @@ type CratePuppeteerOptions = Parameters<typeof Cluster.launch>[0]
 
 export interface TaskData {
   /** task 类型 */
-  type: 'pdf'
+  type: 'pdf' | 'screenshot'
+  /** 目标 url */
   url: string
 }
 
@@ -19,23 +20,32 @@ export class PdfService {
   /** 集群实例 */
   private cluster?: Cluster
 
-  /** 注册 pdf 任务处理 */
-  private async pdfTask(page: Page, url: string) {
-    const fileName = `${Date.now()}-demo.png`
+  /** 任务 puppeteer task 处理 */
+  private async registerTasks() {
+    // 注册集群任务
+    await this.cluster.task(async (jobData) => {
+      const data: TaskData = jobData.data
+      const page = jobData.page
 
-    console.warn('[----> start-print: ', url)
+      // 跳转对应页
+      await page.goto(data.url, { waitUntil: ['domcontentloaded', 'load'] })
 
-    await page.goto(url, { waitUntil: ['domcontentloaded', 'load', 'networkidle0'] })
-    await page.screenshot({ path: fileName })
-    // await page.screenshot({ path: fileName, format: 'A4' })
-
-    console.warn('[----> end-print: ', url, fileName)
-
-    return fileName
+      // 执行对应操作
+      if (data.type === 'pdf') {
+        const fileName = `${Date.now()}-demo.pdf`
+        await page.pdf({ path: fileName, format: 'A4' })
+        return fileName
+      }
+      else if (data.type === 'screenshot') {
+        const fileName = `${Date.now()}-demo.png`
+        await page.screenshot({ path: fileName })
+        return fileName
+      }
+    })
   }
 
   /** 执行 puppeteer 命令 */
-  private async execute(opt?: TaskData) {
+  async execute(opt?: TaskData) {
     return this.cluster?.execute(opt)
   }
 
@@ -43,6 +53,7 @@ export class PdfService {
   async initCluster(options?: CratePuppeteerOptions) {
     console.warn('[----> init-cluster')
 
+    // 初始化集群
     this.cluster = await Cluster.launch(merge({
       // 每个URL一个浏览器(使用隐身页面)。如果一个浏览器实例由于任何原因崩溃，这不会影响其他作业。
       concurrency: Cluster.CONCURRENCY_BROWSER,
@@ -51,8 +62,11 @@ export class PdfService {
       timeout: 3e5,
       // puppeteer-core 实例
       puppeteer,
+
       puppeteerOptions: {
-        executablePath: `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe`,
+
+        // executablePath: `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe`,
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         args: [
           '-disable-gpu',
           '--disable-setuid-sandbox',
@@ -60,7 +74,6 @@ export class PdfService {
           '--no-sandbox',
           '-no-zygote',
           '-no-first-run',
-          // "-single-process",
         ],
         headless: 'new',
         defaultViewport: {
@@ -70,19 +83,10 @@ export class PdfService {
       },
     }, options))
 
-    await this.cluster.task(async ({ page, data }) => {
-      const _control = data as TaskData
-
-      if (_control.type === 'pdf')
-        return this.pdfTask(page as unknown as Page, _control.url)
-    })
+    // 注册集群任务
+    await this.registerTasks()
 
     return this
-  }
-
-  /** 打印 pdf */
-  async printPdf(url: string) {
-    return this.execute({ type: 'pdf', url })
   }
 }
 
