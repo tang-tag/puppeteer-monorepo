@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PdfController } from './pdf.controller';
+import { Test, TestingModule } from '@nestjs/testing'
+import { PdfController } from './pdf.controller'
 
-describe('PdfController', () => {
-  let controller: PdfController;
+describe('pdfController', () => {
+  let controller: PdfController
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PdfController],
-    }).compile();
+    }).compile()
 
-    controller = module.get<PdfController>(PdfController);
-  });
+    controller = module.get<PdfController>(PdfController)
+  })
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
-});
+    expect(controller).toBeDefined()
+  })
+})

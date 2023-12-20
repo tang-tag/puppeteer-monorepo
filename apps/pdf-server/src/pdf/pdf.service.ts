@@ -2,7 +2,6 @@ import { cpus } from 'node:os'
 import { Injectable } from '@nestjs/common'
 import { Cluster } from 'puppeteer-cluster'
 import puppeteer from 'puppeteer-core'
-import type { Page } from 'puppeteer-core'
 import { merge } from 'lodash'
 
 /** 创建 puppeteer 集群的参数类型 */

@@ -1,18 +1,13 @@
-import { NestFactory } from '@nestjs/core'
-import { AppModule } from './app.module'
-import { Logger } from './utils/log'
+import process from 'node:process'
+
+import { loadConfigFile } from '@/utils/config'
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap')
+  // 加载配置文件
+  if (process.env.APP_CONFIG_CENTER_URL)
+    await loadConfigFile(process.env.APP_CONFIG_CENTER_URL)
 
-  const app = await NestFactory.create(AppModule)
-
-  // 监听端口，启动服务
-  const startPort = 3000
-  // 此处不能使用 localhost，否则 docker 映射会失效
-  await app.listen(startPort, '0.0.0.0')
-
-  const url = await app.getUrl()
-  logger.info(`🚀 应用已启动: %s`, url)
+  // 打开程序
+  await import('./bootstrap')
 }
 bootstrap()
