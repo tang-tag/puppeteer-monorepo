@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-import { loadConfigFile } from '@/utils/config'
+import { loadConfigFile } from '@/internal/utils/config'
 
 async function bootstrap() {
   // 加载配置文件

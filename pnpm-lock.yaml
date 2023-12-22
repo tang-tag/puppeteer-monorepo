@@ -50,6 +50,9 @@ importers:
       config:
         specifier: ^3.3.9
         version: 3.3.9
+      dayjs:
+        specifier: ^1.11.10
+        version: 1.11.10
       fastify:
         specifier: ^4.25.1
         version: 4.25.1
@@ -2546,6 +2549,10 @@ packages:
 
   /dateformat@4.6.3:
     resolution: {integrity: sha1-VW+mSX5SF/7beIIUJPihwi+j9LU=}
+    dev: false
+
+  /dayjs@1.11.10:
+    resolution: {integrity: sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==}
     dev: false
 
   /debug@3.2.7:

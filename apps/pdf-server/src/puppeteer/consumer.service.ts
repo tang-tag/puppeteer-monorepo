@@ -1,71 +1,68 @@
-import { cpus } from 'node:os'
 import { Injectable } from '@nestjs/common'
+import { InjectModel, getModelToken } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
 import { Cluster } from 'puppeteer-cluster'
-import puppeteer from 'puppeteer-core'
+import puppeteer, { PuppeteerNodeLaunchOptions } from 'puppeteer-core'
 import { merge } from 'lodash'
+import config from 'config'
+
+import { Job } from '@/schemas'
+import { CONCURRENCY_COUNT, JOB_TYPE, LOCAL_CHROME_PATH } from '@/internal/const'
+import { now } from '@/internal/utils/date'
 
 /** 创建 puppeteer 集群的参数类型 */
 type CratePuppeteerOptions = Parameters<typeof Cluster.launch>[0]
 
-export interface TaskData {
-  /** task 类型 */
-  type: 'pdf' | 'screenshot'
-  /** 目标 url */
-  url: string
-}
-
+/** puppeteer 消费者服务 */
 @Injectable()
-export class PdfService {
+export class ConsumerService {
   /** 集群实例 */
   private cluster?: Cluster
+
+  constructor(@InjectModel(Job.name) private JobModel: Model<Job>) {
+  }
 
   /** 任务 puppeteer task 处理 */
   private async registerTasks() {
     // 注册集群任务
     await this.cluster.task(async (jobData) => {
-      const data: TaskData = jobData.data
+      const data: Job = jobData.data
       const page = jobData.page
 
       // 跳转对应页
       await page.goto(data.url, { waitUntil: ['domcontentloaded', 'load'] })
 
+      // 输出文件名称
+      let fileName = `temp/${now()}`
+
       // 执行对应操作
-      if (data.type === 'pdf') {
-        const fileName = `${Date.now()}-demo.pdf`
+      if (data.type === JOB_TYPE.PDF) {
+        fileName = [fileName, 'pdf'].join('.')
         await page.pdf({ path: fileName, format: 'A4' })
         return fileName
       }
-      else if (data.type === 'screenshot') {
-        const fileName = `${Date.now()}-demo.png`
+      else if (data.type === JOB_TYPE.SCREENSHOT) {
+        fileName = [fileName, 'png'].join('.')
         await page.screenshot({ path: fileName })
         return fileName
       }
     })
   }
 
-  /** 执行 puppeteer 命令 */
-  async execute(opt?: TaskData) {
-    return this.cluster?.execute(opt)
-  }
-
-  /** 初始化 puppeteer 集群 */
-  async initCluster(options?: CratePuppeteerOptions) {
-    console.warn('[----> init-cluster')
-
+  /** 初始化 prettier 集群 */
+  async initCluster() {
     // 初始化集群
     this.cluster = await Cluster.launch(merge({
       // 每个URL一个浏览器(使用隐身页面)。如果一个浏览器实例由于任何原因崩溃，这不会影响其他作业。
       concurrency: Cluster.CONCURRENCY_BROWSER,
       // 最大并发数
-      maxConcurrency: cpus().length,
-      timeout: 3e5,
-      // puppeteer-core 实例
+      maxConcurrency: CONCURRENCY_COUNT,
+
+      // 使用 puppeteer-core 实例
       puppeteer,
 
       puppeteerOptions: {
-
-        // executablePath: `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe`,
-        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        executablePath: LOCAL_CHROME_PATH,
         args: [
           '-disable-gpu',
           '--disable-setuid-sandbox',
@@ -80,20 +77,24 @@ export class PdfService {
           height: 768,
         },
       },
-    }, options))
+    }, config.get('puppeteerOpt')) as CratePuppeteerOptions)
 
     // 注册集群任务
     await this.registerTasks()
 
     return this
   }
+
+  /** 开始轮询任务 */
+  async startTask() {
+  }
 }
 
-/** 自定义一个提供者，因为是异常步，所以不能直接使用，需要在此处进行包装 */
-export const pdfServiceProvider = {
-  provide: PdfService,
-  useFactory: async () => {
-    const connection = await new PdfService().initCluster()
-    return connection
+export const consumerServiceProvider = {
+  provide: ConsumerService,
+  async useFactory(job) {
+    const service = await new ConsumerService(job).initCluster()
+    return service
   },
+  inject: [getModelToken(Job.name)],
 }

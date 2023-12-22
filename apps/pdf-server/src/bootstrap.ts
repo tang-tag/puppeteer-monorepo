@@ -8,7 +8,7 @@ import type { FastifyHttpsOptions } from 'fastify'
 import config from 'config'
 
 import { AppModule } from './app.module'
-import { Logger } from './utils/log'
+import { Logger } from './internal/utils/log'
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap')

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
-import { JOB_STATUS, JOB_TYPE } from '../const'
+import { DEFAULT_RETRY_COUNT, JOB_STATUS, JOB_TYPE } from '@/internal/const'
+import { now } from '@/internal/utils/date'
 
 export type JobDocument = HydratedDocument<Job>
 
@@ -23,7 +24,7 @@ export class Job {
   successUrl?: string
 
   /** 可重试次数 */
-  @Prop({ default: 5, min: 0, max: 5, type: Number })
+  @Prop({ default: DEFAULT_RETRY_COUNT, min: 0, max: DEFAULT_RETRY_COUNT, type: Number })
   canRetryCount: number
 
   /** 错误时的错误信息 */
@@ -31,8 +32,12 @@ export class Job {
   errorMsg?: string
 
   /** 创建任务时间 */
-  @Prop({ type: Date, default: Date.now })
-  createdAt: Date
+  @Prop({ type: String, default: now })
+  createdAt: string
+
+  /** 生成完成时间 */
+  @Prop({ type: String })
+  generated?: string
 }
 
 export const JobSchema = SchemaFactory.createForClass(Job)

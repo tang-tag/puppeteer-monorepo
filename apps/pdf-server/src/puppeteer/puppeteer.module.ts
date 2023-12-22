@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 
 import { PuppeteerController } from './puppeteer.controller'
 import { PuppeteerService } from './puppeteer.service'
+import { consumerServiceProvider } from './consumer.service'
 import { Job, JobSchema } from '@/schemas'
 
 @Module({
@@ -12,6 +13,6 @@ import { Job, JobSchema } from '@/schemas'
     ]),
   ],
   controllers: [PuppeteerController],
-  providers: [PuppeteerService],
+  providers: [PuppeteerService, consumerServiceProvider],
 })
 export class PuppeteerModule {}
